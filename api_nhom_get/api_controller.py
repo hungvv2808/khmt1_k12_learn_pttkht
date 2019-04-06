@@ -16,16 +16,27 @@ class ApiGetData(http.Controller):
         if not product_category:
             try:
                 _domain, _fields, _offset, _limit, _order = _args(kw)
-                data = request.env['product.category'].search_read(fields=['id', 'name', 'parent_id'], offset=_offset, limit=_limit, order=_order)
-                code = request.env['product.template'].search_read(fields=['default_code'], offset=_offset, limit=_limit, order=_order)
-                
+                data1 = request.env['product.category'].search([])
+                data=[]
+                for d in data1:
+                    data.insert(
+                    len(data),
+                    {
+                        'id': d.id,
+                        'name': d.name,
+                        'parent': {
+                            'id': d.parent_id.id,
+                            'name': d.parent_id.name,
+                        },
+                        'child':  request.env['product.category'].search_read(fields=['id', 'name'], domain=[('parent_id','=',d.id)])
+                    })
+
+                # data = request.env['product.category'].search_read(fields=['id', 'name', 'parent_id.name'], offset=_offset, limit=_limit, order=_order)
                 return generate_response(data={
                     'success': True,
                     'msg': "success",
                     'data': serialization_data(data),
-                    'code': serialization_data(code),
                     'data_count': len(data),
-                    'code_count': len(code),
                 })
             except Exception as e:
                 return generate_response(data={
@@ -35,7 +46,7 @@ class ApiGetData(http.Controller):
         else:
             try:
                 product_category = int(product_category)
-                data = request.env['product.category'].search_read(domain=[('id', '=', product_category)])
+                data = request.env['product.category'].search_read(fields=['id', 'name', 'parent_id'], domain=[('id', '=', product_category)])
                 return generate_response(data={
                     'success': True,
                     'msg': "success",
@@ -46,6 +57,7 @@ class ApiGetData(http.Controller):
                     'success': False,
                     'msg': "{}".format(e)
                 })
+
     #Lay danh sach tin tuc
     @validate_token
     @http.route(['/api/get/blog/', '/api/get/blog/<blog_post>'], methods=['GET'], type='http', auth='none', csrf=False)
@@ -58,12 +70,13 @@ class ApiGetData(http.Controller):
         if not blog_post:
             try:
                 _domain, _fields, _offset, _limit, _order = _args(kw)
-                data = request.env['blog.post'].search_read(fields=['id', 'name', 'subtitle'], offset=_offset, limit=_limit, order=_order)
+                data = request.env['blog.post'].search_read(fields=['id', 'name', 'subtitle', 'content'], offset=_offset, limit=_limit, order=_order)
                 return generate_response(data={
                     'success': True,
                     'msg': "success",
-                    'data': serialization_data(data),
-                    'data_count': len(data)
+                    'totalPages': len(data),
+                    'page': (int)(len(data)/_limit)+1,
+                    'result': serialization_data(data)
                 })
             except Exception as e:
                 return generate_response(data={
