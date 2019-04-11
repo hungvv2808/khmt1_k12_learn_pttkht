@@ -30,8 +30,6 @@ class ApiGetData(http.Controller):
                         },
                         'child':  request.env['product.category'].search_read(fields=['id', 'name'], domain=[('parent_id','=',d.id)])
                     })
-
-                # data = request.env['product.category'].search_read(fields=['id', 'name', 'parent_id.name'], offset=_offset, limit=_limit, order=_order)
                 return generate_response(data={
                     'success': True,
                     'msg': "success",
@@ -75,7 +73,7 @@ class ApiGetData(http.Controller):
                     'success': True,
                     'msg': "success",
                     'totalPages': len(data),
-                    'page': (int)(len(data)/_limit)+1,
+                    'page': (int)(_offset/_limit)+1,
                     'result': serialization_data(data)
                 })
             except Exception as e:
@@ -86,7 +84,7 @@ class ApiGetData(http.Controller):
         else:
             try:
                 blog_post = int(blog_post)
-                data = request.env['blog.post'].search_read(domain=[('id', '=', blog_post)])
+                data = request.env['blog.post'].search_read(fields=['id', 'name', 'subtitle', 'content'], domain=[('id', '=', blog_post)])
                 return generate_response(data={
                     'success': True,
                     'msg': "success",
